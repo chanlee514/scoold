@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -238,7 +239,19 @@ public final class ScooldUtils {
 	}
 
 	public boolean isAdmin(Profile authUser) {
-		return authUser != null && User.Groups.ADMINS.toString().equals(authUser.getGroups());
+		// Load config.properties and match by email
+		Properties prop = new Properties();
+		try {
+			InputStream inputStream = ScooldUtils.class.getClassLoader().getResourceAsStream("admin.properties");
+			prop.load(inputStream);
+		} catch (Exception e) {
+			logger.error("Admin properties file not found");
+			return false;
+		}
+		String adminStr = prop.getProperty("admins").toLowerCase();
+		List<String> adminList = Arrays.asList(adminStr.split("\\s*,\\s*"));
+
+		return authUser != null && adminList.contains(authUser.getUser().getEmail());
 	}
 
 	public boolean isMod(Profile authUser) {
